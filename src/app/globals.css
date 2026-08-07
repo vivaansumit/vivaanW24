@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* ============================================
+   Vivaan — Premium design system
+   Palette: pure black / off-white / subtle gold
+   ============================================ */
+
+:root {
+  --v-black: #000000;
+  --v-surface: #0a0a0a;
+  --v-card: #111111;
+  --v-card-hover: #141414;
+  --v-border: #222222;
+  --v-border-hover: #2a2a2a;
+  --v-text: #f5f5f5;
+  --v-text-muted: #a3a3a3;
+  --v-text-dim: #737373;
+  --v-gold: #C9A227;
+  --v-gold-soft: #D4AF37;
+}
+
+html {
+  background-color: var(--v-black);
+  color: var(--v-text);
+  scroll-behavior: smooth;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--v-black);
+  color: var(--v-text);
+}
+
+/* ============================================
+   Selection + focus
+   ============================================ */
+::selection {
+  background: var(--v-gold);
+  color: #000;
+}
+
+/* Subtle gold focus ring for accessibility */
+*:focus-visible {
+  outline: 1px solid var(--v-gold);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Scrollbar — thin, dark
+   ============================================ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--v-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: #1f1f1f;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a2a2a;
+}
+
+/* ============================================
+   Keyframe animations
+   ============================================ */
+
+/* Fade in + rise — hero / page load */
+@keyframes fadeInRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Simple fade */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Subtle shimmer for loaders */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Gentle gold pulse for badges/CTAs */
+@keyframes softPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 162, 39, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(201, 162, 39, 0); }
+}
+
+/* ============================================
+   Utility classes
+   ============================================ */
+
+.animate-fade-in-rise {
+  animation: fadeInRise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 500ms ease-out both;
+}
+
+.stagger-1 { animation-delay: 80ms; }
+.stagger-2 { animation-delay: 160ms; }
+.stagger-3 { animation-delay: 240ms; }
+.stagger-4 { animation-delay: 320ms; }
+.stagger-5 { animation-delay: 400ms; }
+.stagger-6 { animation-delay: 480ms; }
+
+/* Premium card hover lift */
+.card-lift {
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 300ms ease,
+              box-shadow 300ms ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  border-color: rgba(201, 162, 39, 0.35);
+  box-shadow: 0 16px 48px -16px rgba(201, 162, 39, 0.18);
+}
+
+/* Image hover zoom */
+.img-zoom {
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.img-zoom:hover {
+  transform: scale(1.03);
+}
+
+/* Soft backdrop blur on scroll (used via data attribute) */
+.nav-blur {
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  background-color: rgba(0, 0, 0, 0.72);
+  border-bottom: 1px solid rgba(34, 34, 34, 0.6);
+}
+
+/* Soft gold glow border */
+.gold-glow {
+  box-shadow: 0 0 24px -6px rgba(201, 162, 39, 0.25);
+}
+
+/* ============================================
+   Reduced motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto; }
+}
