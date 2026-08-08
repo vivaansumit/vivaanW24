@@ -5,14 +5,15 @@ import { getPublicProfile } from "@/lib/profile";
 import { ToastProvider } from "@/components/Toast";
 import { PublicProfileView } from "@/components/PublicProfileView";
 
-// Always render fresh so newly published content appears immediately.
 export const dynamic = "force-dynamic";
 
 interface ProfilePageProps {
   params: Promise<{ handle: string }>;
 }
 
-export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: ProfilePageProps): Promise<Metadata> {
   try {
     const { handle } = await params;
     const data = await getPublicProfile(handle);
@@ -24,7 +25,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     const { creator } = data;
     return {
       title: creator.pageTitle || `${creator.name} | Creative Portfolio`,
-      description: creator.bio || `Explore the official portfolio of ${creator.name}.`,
+      description:
+        creator.bio || `Explore the official portfolio of ${creator.name}.`,
       openGraph: {
         title: creator.pageTitle || `${creator.name} | Creative Portfolio`,
         description: creator.bio || "",
@@ -38,17 +40,29 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
 
 export default async function PublicProfilePage({ params }: ProfilePageProps) {
   const { handle } = await params;
-  const data = await getPublicProfile(handle);
 
-  // Graceful empty state — never a crash screen, never a login redirect.
+  let data = null;
+  let loadError = "";
+
+  try {
+    data = await getPublicProfile(handle);
+  } catch (e) {
+    loadError = e instanceof Error ? e.message : "Unknown error";
+    console.error("[PublicProfile] load error:", e);
+  }
+
   if (!data) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] flex items-center justify-center p-4">
         <div className="text-center max-w-md bg-[#111111] border border-[#C9A227]/30 p-8 rounded-3xl space-y-4 shadow-2xl">
           <Sparkles className="w-10 h-10 text-[#C9A227] mx-auto" />
-          <h2 className="text-2xl font-extrabold text-[#f5f5f5]">Profile Unavailable</h2>
+          <h2 className="text-2xl font-extrabold text-[#f5f5f5]">
+            Profile Unavailable
+          </h2>
           <p className="text-xs text-[#a3a3a3] leading-relaxed">
-            This portfolio is not published yet. Please check back shortly.
+            {loadError
+              ? `Could not load profile (${handle}).`
+              : `No public profile found for @${handle}.`}
           </p>
           <Link
             href="/"
