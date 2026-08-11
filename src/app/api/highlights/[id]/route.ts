@@ -4,13 +4,28 @@ import { db } from "@/db";
 import { storyHighlights } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+function toIntId(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const n = typeof value === "number" ? value : parseInt(String(value), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id: idParam } = await params;
+  const id = toIntId(idParam);
+  const userId = toIntId((user as any).id);
+
+  if (id === null || userId === null) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
 
   try {
     const body = await req.json();
@@ -22,43 +37,73 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         ...(title !== undefined && { title }),
         ...(coverUrl !== undefined && { coverUrl }),
         ...(items !== undefined && { items }),
-        ...(displayOrder !== undefined && { displayOrder }),
+        ...(displayOrder !== undefined && {
+          displayOrder: toIntId(displayOrder) ?? displayOrder,
+        }),
       })
-      .where(and(eq(storyHighlights.id, id), eq(storyHighlights.userId, user.id)))
+      .where(
+        and(eq(storyHighlights.id, id), eq(storyHighlights.userId, userId))
+      )
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ error: "Highlight not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Highlight not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true, highlight: updated });
   } catch (error) {
     console.error("Update highlight error:", error);
-    return NextResponse.json({ error: "Failed to update highlight" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update highlight" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id: idParam } = await params;
+  const id = toIntId(idParam);
+  const userId = toIntId((user as any).id);
+
+  if (id === null || userId === null) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
 
   try {
     const [deleted] = await db
       .delete(storyHighlights)
-      .where(and(eq(storyHighlights.id, id), eq(storyHighlights.userId, user.id)))
+      .where(
+        and(eq(storyHighlights.id, id), eq(storyHighlights.userId, userId))
+      )
       .returning();
 
     if (!deleted) {
-      return NextResponse.json({ error: "Highlight not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Highlight not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ success: true, message: "Highlight deleted" });
+    return NextResponse.json({
+      success: true,
+      message: "Highlight deleted",
+    });
   } catch (error) {
     console.error("Delete highlight error:", error);
-    return NextResponse.json({ error: "Failed to delete highlight" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete highlight" },
+      { status: 500 }
+    );
   }
 }
