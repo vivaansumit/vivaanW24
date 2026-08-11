@@ -1,89 +1,57 @@
 import { cookies } from "next/headers";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-const COOKIE_NAME = "creatorloom_session";
+const COOKIE_NAME = "portfolio_session";
 
-export interface UserSession {
-  userId: string;
-  email: string;
-  handle: string;
-  name: string;
+export function hashPassword(password: string): string {
+  return bcrypt.hashSync(password, 10);
 }
 
-// Encode simple token: userId:email:timestamp signed or encoded
-export function createSessionData(user: { id: string; email: string; handle: string; name: string }): string {
-  const data = JSON.stringify({
-    userId: user.id,
-    email: user.email,
-    handle: user.handle,
-    name: user.name,
-    createdAt: Date.now()
+export function verifyPassword(password: string, hash: string): boolean {
+  if (!password || !hash) return false;
+  try {
+    return bcrypt.compareSync(String(password), String(hash).trim());
+  } catch (e) {
+    console.error("[verifyPassword]", e);
+    return false;
+  }
+}
+
+export async function setAuthCookie(user: {
+  id: number | string;
+  email?: string | null;
+  handle?: string | null;
+  name?: string | null;
+}) {
+  const jar = await cookies();
+  const value = JSON.stringify({
+    id: user.id,
+    email: user.email || "",
+    handle: user.handle || "",
+    name: user.name || "",
   });
-  return Buffer.from(data).toString("base64");
-}
 
-export function parseSessionData(token: string): UserSession | null {
-  try {
-    const raw = Buffer.from(token, "base64").toString("utf-8");
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.userId) {
-      return {
-        userId: parsed.userId,
-        email: parsed.email,
-        handle: parsed.handle,
-        name: parsed.name,
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-
-  const session = parseSessionData(token);
-  if (!session) return null;
-
-  try {
-    const userList = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
-    if (userList.length === 0) return null;
-    const user = userList[0];
-    const { passwordHash, privacyPassword, ...safeUser } = user;
-    return safeUser;
-  } catch (error) {
-    console.error("Failed to get current user:", error);
-    return null;
-  }
-}
-
-export async function setAuthCookie(user: { id: string; email: string; handle: string; name: string }) {
-  const cookieStore = await cookies();
-  const token = createSessionData(user);
-  cookieStore.set(COOKIE_NAME, token, {
+  jar.set(COOKIE_NAME, value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
+    maxAge: 60 * 60 * 24 * 30,
   });
 }
 
 export async function clearAuthCookie() {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  const jar = await cookies();
+  jar.delete(COOKIE_NAME);
 }
 
-export function verifyPassword(password: string, hash: string): boolean {
-  return bcrypt.compareSync(password, hash);
-}
-
-export function hashPassword(password: string): string {
-  return bcrypt.hashSync(password, 10);
+export async function getSession() {
+  try {
+    const jar = await cookies();
+    const raw = jar.get(COOKIE_NAME)?.value;
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
