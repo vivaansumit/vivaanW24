@@ -19,9 +19,9 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id: idParam } = await params;
-  const id = toIntId(idParam);
-  const userId = toIntId((user as any).id);
+  const resolved = await params;
+  const id = toIntId(resolved.id);
+  const userId = toIntId((user as { id?: unknown }).id);
 
   if (id === null || userId === null) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -38,7 +38,7 @@ export async function PUT(
         ...(coverUrl !== undefined && { coverUrl }),
         ...(items !== undefined && { items }),
         ...(displayOrder !== undefined && {
-          displayOrder: toIntId(displayOrder) ?? displayOrder,
+          displayOrder: toIntId(displayOrder) ?? 0,
         }),
       })
       .where(
@@ -64,7 +64,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser();
@@ -72,9 +72,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id: idParam } = await params;
-  const id = toIntId(idParam);
-  const userId = toIntId((user as any).id);
+  const resolved = await params;
+  const id = toIntId(resolved.id);
+  const userId = toIntId((user as { id?: unknown }).id);
 
   if (id === null || userId === null) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
