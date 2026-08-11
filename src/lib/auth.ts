@@ -1,5 +1,8 @@
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const COOKIE_NAME = "portfolio_session";
 
@@ -45,7 +48,12 @@ export async function clearAuthCookie() {
   jar.delete(COOKIE_NAME);
 }
 
-export async function getSession() {
+export async function getSession(): Promise<{
+  id: number | string;
+  email?: string;
+  handle?: string;
+  name?: string;
+} | null> {
   try {
     const jar = await cookies();
     const raw = jar.get(COOKIE_NAME)?.value;
@@ -54,4 +62,45 @@ export async function getSession() {
   } catch {
     return null;
   }
+}
+
+export async function getCurrentUser() {
+  const session = await getSession();
+  if (!session?.id) return null;
+
+  try {
+    const idNum =
+      typeof session.id === "string" ? parseInt(session.id, 10) : Number(session.id);
+    const rows = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, idNum as number))
+      .limit(1);
+    if (!rows.length) return null;
+    const user = rows[0] as any;
+    const {
+      passwordHash,
+      password_hash,
+      privacyPassword,
+      privacy_password,
+      ...safe
+    } = user;
+    return safe;
+  } catch (e) {
+    console.error("[getCurrentUser]", e);
+    return session as any;
+  }
+}
+
+export async function getUser() {
+  return getCurrentUser();
+}
+
+export async function requireAuth() {
+  return getCurrentUser();
+}
+
+export async function isLoggedIn() {
+  const s = await getSession();
+  return !!s?.id;
 }
