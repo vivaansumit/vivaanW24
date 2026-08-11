@@ -42,7 +42,7 @@ export async function PUT(
         }),
       })
       .where(
-        and(eq(storyHighlights.id, id), eq(storyHighlights.userId, userId))
+        and(eq(storyHighlights.id, id as number), eq(storyHighlights.userId, userId as number))
       )
       .returning();
 
@@ -84,7 +84,7 @@ export async function DELETE(
     const [deleted] = await db
       .delete(storyHighlights)
       .where(
-        and(eq(storyHighlights.id, id), eq(storyHighlights.userId, userId))
+        and(eq(storyHighlights.id, id as number), eq(storyHighlights.userId, userId as number))
       )
       .returning();
 
